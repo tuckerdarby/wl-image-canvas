@@ -1,0 +1,22 @@
+{
+    "compilerOptions": {
+        "target": "es2016",
+        "module": "commonjs",
+        "outDir": "./dist",
+        "rootDir": "./src",
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "moduleResolution": "node",
+        "composite": true,
+        "declaration": true,
+        "declarationMap": true,
+        "baseUrl": ".",
+        "paths": {
+            "@wl-image-canvas/types": ["../types/src"]
+        }
+    },
+    "include": ["src/**/*"],
+    "references": [{ "path": "../types" }]
+}

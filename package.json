@@ -1,0 +1,20 @@
+{
+    "name": "wl-image-canvas",
+    "private": true,
+    "workspaces": [
+        "packages/*"
+    ],
+    "scripts": {
+        "dev": "concurrently \"npm run dev:api\" \"npm run dev:client\"",
+        "dev:api": "NODE_ENV=development npm run dev -w @wl-image-canvas/api",
+        "dev:client": "npm run dev -w @wl-image-canvas/client",
+        "build": "npm run build:types && npm run build:api && npm run build:client",
+        "build:types": "npm run build -w @wl-image-canvas/types",
+        "build:api": "npm run build -w @wl-image-canvas/api",
+        "build:client": "npm run build -w @wl-image-canvas/client",
+        "start": "NODE_ENV=production npm run start -w @wl-image-canvas/api"
+    },
+    "devDependencies": {
+        "concurrently": "^8.0.0"
+    }
+}

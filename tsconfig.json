@@ -1,0 +1,8 @@
+{
+    "references": [
+        { "path": "packages/types" },
+        { "path": "packages/api" },
+        { "path": "packages/client" }
+    ],
+    "files": []
+}

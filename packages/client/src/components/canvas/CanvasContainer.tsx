@@ -14,7 +14,8 @@ interface IDragState {
     offsetX: number;
     offsetY: number;
 }
-export const CanvasContainer: React.FC = () => {
+
+export const CanvasContainer: React.FC<ICanvasContainerProps> = () => {
     const images = useImages();
     const updateImage = useUpdateImage();
     const [activeImageId, setActiveImageId] = useState<string | null>(null);

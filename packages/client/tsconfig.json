@@ -2,12 +2,32 @@
     "files": [],
     "references": [
         { "path": "./tsconfig.app.json" },
-        { "path": "./tsconfig.node.json" }
+        { "path": "./tsconfig.node.json" },
+        { "path": "../types" }
     ],
     "compilerOptions": {
+        "target": "ESNext",
+        "useDefineForClassFields": true,
+        "lib": ["DOM", "DOM.Iterable", "ESNext"],
+        "allowJs": false,
+        "skipLibCheck": true,
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "strict": true,
+        "forceConsistentCasingInFileNames": true,
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "noEmit": true,
+        "jsx": "react-jsx",
+        "composite": true,
+        "declaration": true,
+        "declarationMap": true,
         "baseUrl": ".",
         "paths": {
-            "@/*": ["./src/*"]
+            "@/*": ["./src/*"],
+            "@wl-image-canvas/types": ["../types/src"]
         }
     }
 }

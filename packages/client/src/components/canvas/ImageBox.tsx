@@ -1,4 +1,3 @@
-import { useUpdateImage } from "@/state/ImageContext";
 import { IImage } from "@/types/imageTypes";
 
 interface IImageBoxProps {
@@ -14,8 +13,6 @@ export const ImageBox: React.FC<IImageBoxProps> = ({
     isActive,
     isDragging,
 }) => {
-    const updateImage = useUpdateImage();
-
     return (
         <div
             key={image.id}
