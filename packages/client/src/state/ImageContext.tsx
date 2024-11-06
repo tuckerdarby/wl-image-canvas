@@ -1,4 +1,5 @@
-import { IImage, IImageProperties } from "@/types/imageTypes";
+import { IImageProperties, ImageType } from "@/types/imageTypes";
+import { IImageModel } from "@wl-image-canvas/types";
 import {
     createContext,
     useCallback,
@@ -8,17 +9,23 @@ import {
 } from "react";
 
 interface IImageContext {
-    images: IImage[];
+    images: ImageType[];
     updateImage: (id: string, properties: Partial<IImageProperties>) => void;
-    deleteImage: (id: string) => void;
-    addImage: (image: IImage) => void;
-    setImages: (images: IImage[]) => void;
+    loadImage: (
+        id: string,
+        imageData: IImageModel,
+        imageCounter: number
+    ) => void;
+    removeImage: (id: string) => void;
+    addImage: (image: ImageType) => void;
+    setImages: (images: ImageType[]) => void;
 }
 
 const ImageContext = createContext<IImageContext>({
     images: [],
     updateImage: () => {},
-    deleteImage: () => {},
+    loadImage: () => {},
+    removeImage: () => {},
     addImage: () => {},
     setImages: () => {},
 });
@@ -28,26 +35,39 @@ interface IImageProviderProps {
 }
 
 export const ImageProvider: React.FC<IImageProviderProps> = ({ children }) => {
-    const [images, setImages] = useState<IImage[]>([]);
+    const [images, setImages] = useState<ImageType[]>([]);
 
     const updateImage = useCallback(
-        (id: string, properties: Partial<IImageProperties>) => {
+        (refId: string, properties: Partial<IImageProperties>) => {
             setImages((currentImages) =>
                 currentImages.map((item) =>
-                    item.id === id ? { ...item, ...properties } : item
+                    item.refId === refId ? { ...item, ...properties } : item
                 )
             );
         },
         []
     );
 
-    const deleteImage = useCallback((id: string) => {
+    const loadImage = useCallback(
+        (refId: string, imageData: IImageModel, imageCounter: number) => {
+            setImages((currentImages) =>
+                currentImages.map((item) =>
+                    item.refId === refId && item.imageCounter == imageCounter
+                        ? { ...item, loading: false, imageData }
+                        : item
+                )
+            );
+        },
+        []
+    );
+
+    const removeImage = useCallback((refId: string) => {
         setImages((currentImages) =>
-            currentImages.filter((item) => item.id !== id)
+            currentImages.filter((item) => item.refId !== refId)
         );
     }, []);
 
-    const addImage = useCallback((image: IImage) => {
+    const addImage = useCallback((image: ImageType) => {
         setImages((prevItems) => [...prevItems, { ...image }]);
     }, []);
 
@@ -55,11 +75,12 @@ export const ImageProvider: React.FC<IImageProviderProps> = ({ children }) => {
         () => ({
             images,
             updateImage,
-            deleteImage,
+            loadImage,
+            removeImage,
             addImage,
             setImages,
         }),
-        [images, updateImage, deleteImage, addImage, setImages]
+        [images, updateImage, removeImage, addImage, setImages]
     );
     return (
         <ImageContext.Provider value={contextState}>
@@ -78,9 +99,9 @@ export const useAddImage = () => {
     return addImage;
 };
 
-export const useDeleteImage = () => {
-    const { deleteImage } = useContext(ImageContext);
-    return deleteImage;
+export const useRemoveImage = () => {
+    const { removeImage } = useContext(ImageContext);
+    return removeImage;
 };
 
 export const useUpdateImage = () => {
@@ -88,7 +109,27 @@ export const useUpdateImage = () => {
     return updateImage;
 };
 
+export const useLoadImage = () => {
+    const { loadImage } = useContext(ImageContext);
+    return loadImage;
+};
+
 export const useSetImages = () => {
     const { setImages } = useContext(ImageContext);
     return setImages;
+};
+
+export const useGetImage = () => {
+    const { images } = useContext(ImageContext);
+
+    return (imageId: string | null): ImageType | null => {
+        if (!imageId) {
+            return null;
+        }
+        const image = images.find((current) => current.refId === imageId);
+        if (!image) {
+            return null;
+        }
+        return image;
+    };
 };

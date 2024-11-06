@@ -5,6 +5,7 @@ import { useCallback } from "react";
 export const useSortImages = () => {
     const updateImage = useUpdateImage();
 
+    // TODO move to constants
     const GRID_GAP = 20;
     const MARGIN_HEIGHT = 600;
     const MARGIN_WIDTH = 150;
@@ -28,7 +29,7 @@ export const useSortImages = () => {
                 const targetX = MARGIN_WIDTH + col * (maxImageWidth + GRID_GAP);
                 const targetY = MARGIN_HEIGHT + row * (image.height + GRID_GAP);
 
-                updateImage(image.id, { x: targetX, y: targetY });
+                updateImage(image.refId, { x: targetX, y: targetY });
             });
         },
         [updateImage]

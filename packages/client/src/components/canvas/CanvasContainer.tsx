@@ -1,6 +1,10 @@
 import { useImages, useUpdateImage } from "@/state/ImageContext";
 import React, { useEffect, useRef, useState } from "react";
 import { ImageBox } from "./ImageBox";
+import {
+    useSelectedImageId,
+    useSetSelectedImageId,
+} from "@/state/SelectedContext";
 
 interface ICanvasContainerProps {
     children?: React.ReactNode;
@@ -18,7 +22,8 @@ interface IDragState {
 export const CanvasContainer: React.FC<ICanvasContainerProps> = () => {
     const images = useImages();
     const updateImage = useUpdateImage();
-    const [activeImageId, setActiveImageId] = useState<string | null>(null);
+    const activeImageId = useSelectedImageId();
+    const setActiveImageId = useSetSelectedImageId();
     const containerRef = useRef<HTMLDivElement>(null);
 
     const [dragState, setDragState] = useState<IDragState>({
@@ -31,6 +36,8 @@ export const CanvasContainer: React.FC<ICanvasContainerProps> = () => {
     });
 
     const handleMouseDown = (e: React.MouseEvent, id: string) => {
+        e.preventDefault();
+        e.stopPropagation();
         const rect = (e.target as HTMLElement).getBoundingClientRect();
         const offsetX = e.clientX - rect.left;
         const offsetY = e.clientY - rect.top;
@@ -94,14 +101,15 @@ export const CanvasContainer: React.FC<ICanvasContainerProps> = () => {
             ref={containerRef}
             className="fixed inset-0 overflow-y-auto bg-gray-100"
             onMouseUp={handleMouseUp}
+            onMouseDown={() => setActiveImageId(null)}
         >
             {images.map((image) => (
                 <ImageBox
-                    key={image.id}
+                    key={image.refId}
                     image={image}
                     handleMouseDown={handleMouseDown}
-                    isActive={image.id === activeImageId}
-                    isDragging={image.id === dragState.currentId}
+                    isActive={image.refId === activeImageId}
+                    isDragging={image.refId === dragState.currentId}
                 />
             ))}
         </div>

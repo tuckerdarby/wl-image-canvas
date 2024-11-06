@@ -18,12 +18,31 @@ export class MemoryDatabaseOperator implements IDatabaseOperator {
         return MemoryDatabaseOperator.instance;
     }
 
-    public async get(id: string): Promise<IImageModel | null> {
+    public async get(id: string): Promise<IImageModel> {
+        console.log(this.storage.keys());
         const image = this.storage.get(id);
         if (!image) {
             throw new NotFoundError("Image", id);
         }
         return image;
+    }
+
+    public async update(
+        id: string,
+        prompt: string,
+        imageUrl: string
+    ): Promise<IImageModel> {
+        const image = this.storage.get(id);
+        if (!image) {
+            throw new NotFoundError("Image", id);
+        }
+        const newImage = {
+            ...image,
+            imageUrl,
+            prompt,
+        };
+        this.storage.set(id, newImage);
+        return newImage;
     }
 
     public async list(): Promise<IImageModel[]> {

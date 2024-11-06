@@ -1,6 +1,12 @@
 import { fal } from "@fal-ai/client";
 import { SecretsService } from "./secretsService";
 
+interface IImageResult {
+    images: {
+        url: string;
+    }[];
+}
+
 export class FalService {
     private static instance: FalService;
 
@@ -18,7 +24,7 @@ export class FalService {
         return FalService.instance;
     }
 
-    async createImage(prompt: string): Promise<string> {
+    async createImage(prompt: string): Promise<IImageResult> {
         const result = await fal.subscribe("fal-ai/flux/schnell", {
             input: {
                 prompt,
