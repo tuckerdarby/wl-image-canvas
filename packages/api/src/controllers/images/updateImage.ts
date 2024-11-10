@@ -1,8 +1,11 @@
 import { Request, Response } from "express";
 import { generateSingleImage } from "../imageUtils";
 import { IContext } from "src/context";
-import { createUpdateImageEvent } from "../../events/createEvent";
-import { IImageModel } from "@wl-image-canvas/types";
+import {
+    createImageErrorEvent,
+    createUpdateImageEvent,
+} from "../../events/createEvent";
+import { IImageModel, ImageErrorType } from "@wl-image-canvas/types";
 
 const createUpdateImageTask = async (
     context: IContext,
@@ -12,10 +15,13 @@ const createUpdateImageTask = async (
     try {
         const imageResult = await generateSingleImage(context, prompt);
         if (!imageResult.success) {
-            // TODO error event
             console.error(
                 `Error on createImageTask when creating image for ${prompt} and image ${image.id}:`,
                 imageResult
+            );
+            context.channels.sendToChannel(
+                image.userId,
+                createImageErrorEvent(image.id, ImageErrorType.IMAGE)
             );
             return;
         }
@@ -32,7 +38,10 @@ const createUpdateImageTask = async (
             );
         }
     } catch (e) {
-        // TODO error event
+        context.channels.sendToChannel(
+            image.userId,
+            createImageErrorEvent(image.id, ImageErrorType.IMAGE)
+        );
         console.error(`Error on UpdateImageTask:`, e);
     }
 };

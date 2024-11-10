@@ -1,3 +1,0 @@
-interface IErrorResponse {
-    error: string;
-}

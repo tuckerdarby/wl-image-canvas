@@ -5,8 +5,11 @@ import {
 } from "../imageUtils";
 import { DUMMY_USER_ID } from "../../constants";
 import { IContext } from "src/context";
-import { IImageModel } from "@wl-image-canvas/types";
-import { createUpdateImageEvent } from "../../events/createEvent";
+import { IImageModel, ImageErrorType } from "@wl-image-canvas/types";
+import {
+    createImageErrorEvent,
+    createUpdateImageEvent,
+} from "../../events/createEvent";
 
 const imageVariationTask = async (
     context: IContext,
@@ -21,7 +24,10 @@ const imageVariationTask = async (
                 `Error on ImageVariationTask when creating prompt variation for ${prompt} and image ${image.id}:`,
                 promptData
             );
-            // TODO error event
+            context.channels.sendToChannel(
+                image.userId,
+                createImageErrorEvent(image.id, ImageErrorType.PROMPT)
+            );
             return;
         }
         const imageData = await generateSingleImage(context, promptData.prompt);
@@ -30,7 +36,10 @@ const imageVariationTask = async (
                 `Error on ImageVariationTask when creating image variation for ${prompt} and image ${image.id}:`,
                 imageData
             );
-            // TODO error event
+            context.channels.sendToChannel(
+                image.userId,
+                createImageErrorEvent(image.id, ImageErrorType.IMAGE)
+            );
             return;
         }
 
@@ -45,8 +54,11 @@ const imageVariationTask = async (
             createUpdateImageEvent(updatedImage)
         );
     } catch (e) {
-        // TODO error event
         console.error(`Error on ImageVariationTask:`, e);
+        context.channels.sendToChannel(
+            image.userId,
+            createImageErrorEvent(image.id, ImageErrorType.IMAGE)
+        );
     }
 };
 

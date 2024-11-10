@@ -20,7 +20,7 @@ export async function startApp() {
     if (isDevelopment) {
         app.use(
             cors({
-                origin: "http://localhost:5173",
+                origin: "http://localhost:5173", // vite default port
                 credentials: true,
             })
         );
@@ -28,13 +28,16 @@ export async function startApp() {
 
     app.use(express.json());
 
-    app.get("/", (req: Request, res: Response) => {
-        res.send("Hello World!");
+    app.get("/health", (req: Request, res: Response) => {
+        res.status(200).json({
+            status: "healthy",
+            timestamp: new Date().toISOString(),
+        });
     });
 
     app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
         console.error(err.stack);
-        res.status(500).send("Something broke!");
+        res.status(500).send("An unexpected error occurred.");
     });
 
     // Instantiate routes

@@ -1,4 +1,5 @@
 import { MemoryDatabaseOperator } from "./memoryOperator";
+import { DynamoDBOperator } from "./dynamoOperator";
 import { IDatabaseOperator } from "./types";
 
 export const getOperator = (): IDatabaseOperator => {
@@ -6,7 +7,8 @@ export const getOperator = (): IDatabaseOperator => {
 
     switch (environment) {
         case "production":
-            return MemoryDatabaseOperator.getInstance(); // TODO change
+            const tableName = process.env.DYNAMODB_TABLE_NAME!;
+            return DynamoDBOperator.getInstance(tableName);
         case "development":
         default:
             return MemoryDatabaseOperator.getInstance();

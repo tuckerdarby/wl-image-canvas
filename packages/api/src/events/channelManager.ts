@@ -1,6 +1,6 @@
-import { IEventMessage } from "@wl-image-canvas/types";
+import { EventMessage } from "@wl-image-canvas/types";
 
-type EventHandler = (event: IEventMessage) => void;
+type EventHandler = (event: EventMessage) => void;
 
 interface Channel {
     handlers: Set<EventHandler>;
@@ -47,7 +47,7 @@ export class ChannelManager {
         }
     }
 
-    sendToChannel(channelId: string, event: IEventMessage): boolean {
+    sendToChannel(channelId: string, event: EventMessage): boolean {
         const channel = this.channels.get(channelId);
         if (channel) {
             channel.handlers.forEach((handler) => {

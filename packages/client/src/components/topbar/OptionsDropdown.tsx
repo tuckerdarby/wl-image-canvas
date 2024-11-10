@@ -1,4 +1,8 @@
-import { LogOut, Delete, Settings } from "lucide-react";
+import {
+    // LogOut,
+    Delete,
+    Settings,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -6,7 +10,7 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuLabel,
-    DropdownMenuSeparator,
+    // DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useDeleteAllImages } from "@/hooks/useDeleteAllImages";

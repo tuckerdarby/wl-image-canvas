@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import { IContext } from "../../context";
-import { DUMMY_USER_ID } from "src/constants";
 
 export const getListImagesAPI = (context: IContext) => {
     const listImagesAPI = async (
