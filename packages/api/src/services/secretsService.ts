@@ -7,17 +7,9 @@ export interface AppSecrets {
 }
 
 export class SecretsService {
-    private static instance: SecretsService;
     private secrets: AppSecrets | null = null;
 
-    private constructor() {}
-
-    static getInstance(): SecretsService {
-        if (!SecretsService.instance) {
-            SecretsService.instance = new SecretsService();
-        }
-        return SecretsService.instance;
-    }
+    constructor() {}
 
     private getSecret(key: keyof AppSecrets): string {
         if (!this.secrets) {

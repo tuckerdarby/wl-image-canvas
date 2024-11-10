@@ -105,11 +105,11 @@ export const CanvasContainer: React.FC<ICanvasContainerProps> = () => {
         >
             {images.map((image) => (
                 <ImageBox
-                    key={image.refId}
+                    key={image.id}
                     image={image}
                     handleMouseDown={handleMouseDown}
-                    isActive={image.refId === activeImageId}
-                    isDragging={image.refId === dragState.currentId}
+                    isActive={image.id === activeImageId}
+                    isDragging={image.id === dragState.currentId}
                 />
             ))}
         </div>

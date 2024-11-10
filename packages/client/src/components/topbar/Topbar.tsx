@@ -2,6 +2,7 @@ import { useSortImages } from "@/hooks/useSortImages";
 import { Button } from "../ui/button";
 import { GenerateBox } from "./GenerateBox";
 import { useImages } from "@/state/ImageContext";
+import { OptionsDropDown } from "./OptionsDropdown";
 
 export const Topbar = () => {
     const images = useImages();
@@ -18,6 +19,7 @@ export const Topbar = () => {
                     >
                         Arrange to Grid
                     </Button>
+                    <OptionsDropDown />
                 </div>
             </div>
         </div>

@@ -5,18 +5,13 @@ export interface IImageProperties {
     y: number;
     width: number;
     height: number;
-    refId: string;
-    imageCounter: number;
-    prompt: string;
+    id: string;
+    currentPrompt?: string;
+    liked?: boolean;
 }
 
 export interface IImage extends IImageProperties {
-    imageData: IImageModel;
-    loading: false;
+    imageData?: IImageModel;
 }
 
-export interface IImageLoading extends IImageProperties {
-    loading: true;
-}
-
-export type ImageType = IImage | IImageLoading;
+export type ImageType = IImage;

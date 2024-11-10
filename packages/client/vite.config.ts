@@ -7,6 +7,12 @@ export default defineConfig(({ mode }) => ({
     resolve: {
         alias: {
             "@": path.resolve(__dirname, "./src"),
+            "@wl-image-canvas/types": path.resolve(__dirname, "../types/src"),
+        },
+    },
+    build: {
+        commonjsOptions: {
+            include: [/@wl-image-canvas\/types/, /node_modules/],
         },
     },
     server: {

@@ -1,15 +1,21 @@
 import express, { Express, Request, Response, NextFunction } from "express";
 import cors from "cors";
 import { SecretsService } from "./services/secretsService";
-import { imageRouter } from "./routes/imageRoute";
+import { createImageRouter } from "./routes/imageRoute";
+import { getOperator } from "./operators/operator";
+import { FalService } from "./services/falService";
+import { OpenAIService } from "./services/openaiService";
+import { ChannelManager } from "./events/channelManager";
+import { createEventsRouter } from "./routes/eventsRoute";
+import { createContext } from "./context";
 
 export async function startApp() {
-    await SecretsService.getInstance().initialize();
-
     const app: Express = express();
     const port = process.env.PORT || 3000;
 
     const isDevelopment = process.env.NODE_ENV === "development";
+
+    const context = await createContext();
 
     if (isDevelopment) {
         app.use(
@@ -31,7 +37,9 @@ export async function startApp() {
         res.status(500).send("Something broke!");
     });
 
-    app.use("/api/image", imageRouter);
+    // Instantiate routes
+    app.use("/api", createEventsRouter(context));
+    app.use("/api/image", createImageRouter(context));
 
     app.listen(port, () => {
         console.log(`Server running at http://localhost:${port}`);

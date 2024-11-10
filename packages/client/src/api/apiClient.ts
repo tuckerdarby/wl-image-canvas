@@ -3,9 +3,11 @@ import { IImageModel } from "@wl-image-canvas/types";
 const API_URL = import.meta.env.VITE_API_URL;
 
 export class ApiError extends Error {
-    constructor(public status: number, message: string) {
+    status: number;
+    constructor(status: number, message: string) {
         super(message);
         this.name = "ApiError";
+        this.status = status;
     }
 }
 
@@ -36,8 +38,10 @@ async function apiClient<T>(
 }
 
 export const api = {
-    get: <T>(endpoint: string, options?: RequestInit) =>
-        apiClient<T>(endpoint, { ...options, method: "GET" }),
+    listImages: (): Promise<{ images: IImageModel[] }> =>
+        apiClient<{ images: IImageModel[] }>("/image/list", {
+            method: "GET",
+        }),
 
     createImage: (prompt: string): Promise<IImageModel> =>
         apiClient<IImageModel>("/image/create", {
@@ -55,11 +59,15 @@ export const api = {
             }),
         }),
 
-    createImageVariation: (prompt: string): Promise<IImageModel> =>
-        apiClient<IImageModel>("/image/duplicate", {
+    createImageVariation: (
+        prompt: string,
+        variationCount: number
+    ): Promise<{ images: IImageModel[] }> =>
+        apiClient<{ images: IImageModel[] }>("/image/variation", {
             method: "POST",
             body: JSON.stringify({
                 prompt,
+                variationCount,
             }),
         }),
 
@@ -72,11 +80,24 @@ export const api = {
             }),
         }),
 
+    likeImage: (imageId: string, liked: boolean): Promise<IImageModel> =>
+        apiClient<IImageModel>("/image/like", {
+            method: "PUT",
+            body: JSON.stringify({
+                imageId,
+                liked,
+            }),
+        }),
+
     deleteImage: (imageId: string): Promise<IImageModel> =>
         apiClient<IImageModel>("/image/delete", {
             method: "DELETE",
             body: JSON.stringify({
                 imageId,
             }),
+        }),
+    deleteAllImages: (): Promise<IImageModel> =>
+        apiClient<IImageModel>("/image/clear", {
+            method: "DELETE",
         }),
 };

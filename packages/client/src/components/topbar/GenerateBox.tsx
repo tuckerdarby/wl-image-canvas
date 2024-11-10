@@ -1,10 +1,12 @@
-import { useGetImage } from "@/state/ImageContext";
+import { useGetImage, useUpdateImage } from "@/state/ImageContext";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useCreateImage } from "@/hooks/useCreateImage";
 import { useSelectedImageId } from "@/state/SelectedContext";
 import { useUpdateImagePrompt } from "@/hooks/useUpdateImagePrompt";
+import { debounce } from "lodash";
+import { IImage } from "@/types/imageTypes";
 
 export const GenerateBox = () => {
     const createImage = useCreateImage();
@@ -13,14 +15,27 @@ export const GenerateBox = () => {
     const getImage = useGetImage();
     const selectedImage = getImage(selectedImageId);
     const updateImagePrompt = useUpdateImagePrompt();
+    const updateImage = useUpdateImage();
+
+    const debouncedUpdateImagePrompt = useRef(
+        debounce((image: IImage, promptText: string) => {
+            updateImagePrompt(image, promptText);
+        }, 500)
+    ).current;
 
     useEffect(() => {
         if (selectedImage === null) {
             setPrompt("");
         } else {
-            setPrompt(selectedImage.prompt);
+            setPrompt(selectedImage.currentPrompt || "");
         }
     }, [selectedImageId]);
+
+    useEffect(() => {
+        return () => {
+            debouncedUpdateImagePrompt.cancel();
+        };
+    }, [debouncedUpdateImagePrompt]);
 
     const handleAddImage = useCallback(() => {
         if (!prompt) {
@@ -28,12 +43,11 @@ export const GenerateBox = () => {
         }
         createImage(prompt);
         setPrompt("");
-    }, [prompt, createImage, prompt]);
+    }, [prompt, createImage]);
 
     const handleInput = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
             const inputText = event.target.value;
-            // Filter out the special characters
             if (["+", "-", "!"].includes(inputText.slice(-1))) {
                 return;
             }
@@ -41,12 +55,13 @@ export const GenerateBox = () => {
             event.preventDefault();
             event.stopPropagation();
             setPrompt(inputText);
-            // TODO change this so that it works for non loading too
-            if (selectedImage && !selectedImage.loading) {
-                updateImagePrompt(selectedImage, inputText);
+
+            if (selectedImage) {
+                updateImage(selectedImage.id, { currentPrompt: inputText });
+                debouncedUpdateImagePrompt(selectedImage, inputText);
             }
         },
-        [setPrompt, selectedImage]
+        [setPrompt, selectedImage, updateImage, debouncedUpdateImagePrompt]
     );
 
     return (
@@ -64,6 +79,7 @@ export const GenerateBox = () => {
                 value={prompt}
                 onChange={handleInput}
                 type="text"
+                className="w-96"
                 placeholder="Type here to generate..."
             />
             <Button type="submit">Create New</Button>

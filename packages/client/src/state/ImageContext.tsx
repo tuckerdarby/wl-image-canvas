@@ -4,6 +4,7 @@ import {
     createContext,
     useCallback,
     useContext,
+    useEffect,
     useMemo,
     useState,
 } from "react";
@@ -11,11 +12,7 @@ import {
 interface IImageContext {
     images: ImageType[];
     updateImage: (id: string, properties: Partial<IImageProperties>) => void;
-    loadImage: (
-        id: string,
-        imageData: IImageModel,
-        imageCounter: number
-    ) => void;
+    loadImage: (id: string, imageData: IImageModel) => void;
     removeImage: (id: string) => void;
     addImage: (image: ImageType) => void;
     setImages: (images: ImageType[]) => void;
@@ -41,29 +38,32 @@ export const ImageProvider: React.FC<IImageProviderProps> = ({ children }) => {
         (refId: string, properties: Partial<IImageProperties>) => {
             setImages((currentImages) =>
                 currentImages.map((item) =>
-                    item.refId === refId ? { ...item, ...properties } : item
+                    item.id === refId ? { ...item, ...properties } : item
                 )
             );
         },
         []
     );
 
-    const loadImage = useCallback(
-        (refId: string, imageData: IImageModel, imageCounter: number) => {
-            setImages((currentImages) =>
-                currentImages.map((item) =>
-                    item.refId === refId && item.imageCounter == imageCounter
-                        ? { ...item, loading: false, imageData }
-                        : item
-                )
-            );
-        },
-        []
-    );
+    const loadImage = useCallback((refId: string, imageData: IImageModel) => {
+        setImages((currentImages) =>
+            currentImages.map((item) =>
+                item.id === refId &&
+                (item.currentPrompt == imageData.prompt || !item.currentPrompt)
+                    ? {
+                          ...item,
+                          imageData,
+                          currentPrompt: item.currentPrompt || imageData.prompt,
+                          liked: imageData.liked,
+                      }
+                    : item
+            )
+        );
+    }, []);
 
     const removeImage = useCallback((refId: string) => {
         setImages((currentImages) =>
-            currentImages.filter((item) => item.refId !== refId)
+            currentImages.filter((item) => item.id !== refId)
         );
     }, []);
 
@@ -82,6 +82,8 @@ export const ImageProvider: React.FC<IImageProviderProps> = ({ children }) => {
         }),
         [images, updateImage, removeImage, addImage, setImages]
     );
+
+    useEffect(() => {}, []);
     return (
         <ImageContext.Provider value={contextState}>
             {children}
@@ -126,7 +128,7 @@ export const useGetImage = () => {
         if (!imageId) {
             return null;
         }
-        const image = images.find((current) => current.refId === imageId);
+        const image = images.find((current) => current.id === imageId);
         if (!image) {
             return null;
         }

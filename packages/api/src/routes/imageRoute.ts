@@ -1,22 +1,28 @@
 import { Router } from "express";
-import { createImageAPI } from "../controllers/createImage";
-import { updateImageAPI } from "../controllers/updateImage";
-import { createImageVariationAPI } from "../controllers/createVariation";
-import { deleteImageAPI } from "../controllers/deleteImage";
-import { duplicateImageAPI } from "../controllers/duplicateImage";
+import { IContext } from "src/context";
+import { getCreateImageAPI } from "../controllers/images/createImage";
+import { getUpdateImageAPI } from "../controllers/images/updateImage";
+import { getCreateImageVariationAPI } from "../controllers/images/createVariation";
+import { getDeleteImageAPI } from "../controllers/images/deleteImage";
+import { getDuplicateimageAPI } from "../controllers/images/duplicateImage";
+import { getLikeImageAPI } from "../controllers/images/likeImage";
+import { getListImagesAPI } from "../controllers/images/listImages";
+import { getDeleteAllImagesAPI } from "../controllers/images/deleteAllImages";
 
-const createRouter = () => {
+export const createImageRouter = (context: IContext) => {
     const router = Router();
 
-    router.post("/create", createImageAPI);
-    router.post("/duplicate", duplicateImageAPI);
-    router.post("/variation", createImageVariationAPI);
+    router.get("/list", getListImagesAPI(context));
 
-    router.put("/update", updateImageAPI);
+    router.post("/create", getCreateImageAPI(context));
+    router.post("/duplicate", getDuplicateimageAPI(context));
+    router.post("/variation", getCreateImageVariationAPI(context));
 
-    router.delete("/delete", deleteImageAPI);
+    router.put("/update", getUpdateImageAPI(context));
+    router.put("/like", getLikeImageAPI(context));
+
+    router.delete("/delete", getDeleteImageAPI(context));
+    router.delete("/clear", getDeleteAllImagesAPI(context));
 
     return router;
 };
-
-export const imageRouter = createRouter();

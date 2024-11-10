@@ -8,24 +8,14 @@ interface IImageResult {
 }
 
 export class FalService {
-    private static instance: FalService;
-
-    constructor() {
-        const secrets = SecretsService.getInstance();
+    constructor(secretsService: SecretsService) {
         fal.config({
-            credentials: secrets.getFalAPIKey(),
+            credentials: secretsService.getFalAPIKey(),
         });
     }
 
-    static getInstance(): FalService {
-        if (!FalService.instance) {
-            FalService.instance = new FalService();
-        }
-        return FalService.instance;
-    }
-
     async createImage(prompt: string): Promise<IImageResult> {
-        const result = await fal.subscribe("fal-ai/flux/schnell", {
+        const result = await fal.subscribe("fal-ai/fast-turbo-diffusion", {
             input: {
                 prompt,
             },

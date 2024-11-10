@@ -1,14 +1,14 @@
 {
     "compilerOptions": {
-        "target": "es2016",
+        "target": "es2017",
         "module": "commonjs",
+        "moduleResolution": "node",
         "outDir": "./dist",
         "rootDir": "./src",
         "strict": true,
         "esModuleInterop": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
-        "moduleResolution": "node",
         "composite": true,
         "declaration": true,
         "declarationMap": true,

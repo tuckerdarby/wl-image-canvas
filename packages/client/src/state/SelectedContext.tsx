@@ -2,7 +2,7 @@ import { createContext, useContext, useMemo, useState } from "react";
 
 interface ISelectedContext {
     selected: string | null;
-    setSelected: (id: string) => void;
+    setSelected: (id: string | null) => void;
 }
 
 const SelectedContext = createContext<ISelectedContext>({
