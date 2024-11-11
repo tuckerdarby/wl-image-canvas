@@ -7,6 +7,8 @@ An example application that utilizes Fal and OpenAI to create a variation of ima
 ```
 NodeJS (20.9.x)
 npm (10.1.0)
+Docker
+aws cli
 ```
 
 ## Packages
