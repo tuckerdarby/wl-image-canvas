@@ -9,6 +9,7 @@ import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
 import * as ecr from "aws-cdk-lib/aws-ecr";
 import * as autoscaling from "aws-cdk-lib/aws-autoscaling";
+import * as iam from "aws-cdk-lib/aws-iam";
 import { Construct } from "constructs";
 
 export class AppStack extends cdk.Stack {
@@ -24,28 +25,10 @@ export class AppStack extends cdk.Stack {
         // Frontend: S3 bucket for static website
         const websiteBucket = new s3.Bucket(this, "StaticAssetsBucket", {
             blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-            removalPolicy: cdk.RemovalPolicy.DESTROY, // For dev - change for prod
-            autoDeleteObjects: true, // For dev - change for prod
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
+            autoDeleteObjects: true,
         });
 
-        // CloudFront distribution
-        const distribution = new cloudfront.Distribution(this, "Distribution", {
-            defaultBehavior: {
-                origin: new origins.S3Origin(websiteBucket),
-                viewerProtocolPolicy:
-                    cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-            },
-            defaultRootObject: "index.html",
-            errorResponses: [
-                {
-                    httpStatus: 404,
-                    responseHttpStatus: 200,
-                    responsePagePath: "/index.html",
-                },
-            ],
-        });
-
-        // DynamoDB table
         const table = new dynamodb.Table(this, "Table", {
             partitionKey: { name: "id", type: dynamodb.AttributeType.STRING },
             billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
@@ -59,13 +42,33 @@ export class AppStack extends cdk.Stack {
             "prod/app/secrets"
         );
 
-        // ECS Cluster
         const cluster = new ecs.Cluster(this, "Cluster", {
             vpc,
             containerInsights: true,
         });
 
-        // Single instance AutoScaling Group
+        const instanceRole = new iam.Role(this, "EC2InstanceRole", {
+            assumedBy: new iam.ServicePrincipal("ec2.amazonaws.com"),
+            managedPolicies: [
+                iam.ManagedPolicy.fromAwsManagedPolicyName(
+                    "service-role/AmazonEC2ContainerServiceforEC2Role"
+                ),
+                iam.ManagedPolicy.fromAwsManagedPolicyName(
+                    "AmazonEC2ContainerRegistryReadOnly"
+                ),
+            ],
+        });
+
+        const ec2SecurityGroup = new ec2.SecurityGroup(
+            this,
+            "EC2SecurityGroup",
+            {
+                vpc,
+                description: "Security group for EC2 instances in ECS cluster",
+                allowAllOutbound: true,
+            }
+        );
+
         const autoScalingGroup = new autoscaling.AutoScalingGroup(this, "ASG", {
             vpc,
             instanceType: ec2.InstanceType.of(
@@ -79,6 +82,8 @@ export class AppStack extends cdk.Stack {
             healthCheck: autoscaling.HealthCheck.elb({
                 grace: cdk.Duration.seconds(60),
             }),
+            securityGroup: ec2SecurityGroup,
+            role: instanceRole,
         });
 
         const capacityProvider = new ecs.AsgCapacityProvider(
@@ -86,23 +91,80 @@ export class AppStack extends cdk.Stack {
             "AsgCapacityProvider",
             {
                 autoScalingGroup,
-                enableManagedScaling: false, // Disable managed scaling since we want exactly one instance
-                enableManagedTerminationProtection: false, // Allow instance replacement during updates
+                enableManagedScaling: false,
+                enableManagedTerminationProtection: false,
             }
         );
         cluster.addAsgCapacityProvider(capacityProvider);
 
-        // ALB with increased timeout for SSE
+        const albSecurityGroup = new ec2.SecurityGroup(
+            this,
+            "ALBSecurityGroup",
+            {
+                vpc,
+                description: "Security group for ALB",
+                allowAllOutbound: true,
+            }
+        );
+
+        albSecurityGroup.addIngressRule(
+            ec2.Peer.anyIpv4(),
+            ec2.Port.tcp(80),
+            "Allow inbound HTTP traffic from anywhere"
+        );
+
+        albSecurityGroup.addEgressRule(
+            ec2.Peer.securityGroupId(ec2SecurityGroup.securityGroupId),
+            ec2.Port.tcp(3000),
+            "Allow outbound traffic to ECS tasks on port 3000"
+        );
+
+        ec2SecurityGroup.addIngressRule(
+            ec2.Peer.securityGroupId(albSecurityGroup.securityGroupId),
+            ec2.Port.tcp(3000),
+            "Allow inbound from ALB"
+        );
+
         const alb = new elbv2.ApplicationLoadBalancer(this, "ALB", {
             vpc,
             internetFacing: true,
+            securityGroup: albSecurityGroup,
+        });
+        const albOrigin = new origins.LoadBalancerV2Origin(alb, {
+            protocolPolicy: cloudfront.OriginProtocolPolicy.HTTP_ONLY,
+        });
+
+        const distribution = new cloudfront.Distribution(this, "Distribution", {
+            defaultBehavior: {
+                origin: new origins.S3Origin(websiteBucket),
+                viewerProtocolPolicy:
+                    cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+            },
+            additionalBehaviors: {
+                "/api/*": {
+                    origin: albOrigin,
+                    viewerProtocolPolicy:
+                        cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                    allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+                    cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
+                    originRequestPolicy:
+                        cloudfront.OriginRequestPolicy.ALL_VIEWER,
+                },
+            },
+            defaultRootObject: "index.html",
+            errorResponses: [
+                {
+                    httpStatus: 404,
+                    responseHttpStatus: 200,
+                    responsePagePath: "/index.html",
+                },
+            ],
         });
 
         const listener = alb.addListener("Listener", {
             port: 80,
         });
 
-        // Increase the idle timeout for SSE
         const cfnALB = alb.node.defaultChild as elbv2.CfnLoadBalancer;
         cfnALB.addPropertyOverride("LoadBalancerAttributes", [
             {
@@ -111,39 +173,31 @@ export class AppStack extends cdk.Stack {
             },
         ]);
 
-        // ECR Repository
-        const repository = new ecr.Repository(this, "Repository", {
-            removalPolicy: cdk.RemovalPolicy.DESTROY, // For dev - change for prod
-        });
+        // ECR Repository -- needs to be manually made from pushing docker container
+        const repository = ecr.Repository.fromRepositoryName(
+            this,
+            "Repository",
+            "wl-canvas-app"
+        );
 
         // ECS Task Definition
-        const taskDefinition = new ecs.Ec2TaskDefinition(this, "TaskDef");
+        const taskDefinition = new ecs.Ec2TaskDefinition(this, "TaskDef", {
+            networkMode: ecs.NetworkMode.HOST,
+        });
 
-        // Grant permissions
         secret.grantRead(taskDefinition.taskRole);
         table.grantReadWriteData(taskDefinition.taskRole);
 
-        // Add container to task definition
         const container = taskDefinition.addContainer("AppContainer", {
-            // Update to use your specific ECR image
-            image: ecs.ContainerImage.fromRegistry(
-                `${
-                    cdk.Stack.of(this).account
-                }.dkr.ecr.us-west-2.amazonaws.com/wl-canvas-app:latest` // TODO remove account id
-            ),
+            image: ecs.ContainerImage.fromEcrRepository(repository, "latest"),
             memoryLimitMiB: 1024,
             cpu: 512,
             logging: ecs.LogDrivers.awsLogs({ streamPrefix: "wl-canvas-app" }),
             environment: {
                 NODE_ENV: "production",
                 DYNAMODB_TABLE_NAME: table.tableName,
-                DYNAMODB_TABLE_ARN: table.tableArn,
-                S3_BUCKET_NAME: websiteBucket.bucketName,
-                S3_BUCKET_ARN: websiteBucket.bucketArn,
-                CLOUDFRONT_DISTRIBUTION_ID: distribution.distributionId,
-                CLOUDFRONT_DOMAIN_NAME: distribution.distributionDomainName,
                 AWS_REGION: cdk.Stack.of(this).region,
-                ALB_DNS_NAME: alb.loadBalancerDnsName,
+                AWS_SECRET_NAME: "prod/app/secrets",
             },
             secrets: {
                 APP_SECRETS: ecs.Secret.fromSecretsManager(secret),
@@ -174,7 +228,7 @@ export class AppStack extends cdk.Stack {
 
         // Add target group with increased deregistration delay
         listener.addTargets("Target", {
-            port: 80,
+            port: 3000,
             protocol: elbv2.ApplicationProtocol.HTTP,
             targets: [service],
             healthCheck: {
@@ -193,6 +247,22 @@ export class AppStack extends cdk.Stack {
             alb,
             ec2.Port.tcp(3000),
             "Allow inbound from ALB"
+        );
+        service.connections.allowTo(
+            alb,
+            ec2.Port.tcp(3000),
+            "Allow outbound to ALB"
+        );
+
+        service.connections.allowFrom(
+            alb,
+            ec2.Port.tcp(80),
+            "Allow inbound from ALB"
+        );
+        service.connections.allowTo(
+            alb,
+            ec2.Port.tcp(3000),
+            "Allow outbound to ALB"
         );
 
         // Outputs

@@ -43,12 +43,14 @@ const imageVariationTask = async (
             return;
         }
 
-        const updatedImage: IImageModel = {
-            ...image,
+        const updatedImageData: Partial<Omit<IImageModel, "id" | "userId">> = {
             prompt: promptData.prompt,
             imageUrl: imageData.imageUrl,
         };
-        await context.operators.image.update(image.id, updatedImage);
+        const updatedImage = await context.operators.image.update(
+            image.id,
+            updatedImageData
+        );
         context.channels.sendToChannel(
             image.userId,
             createUpdateImageEvent(updatedImage)

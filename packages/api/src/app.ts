@@ -29,6 +29,7 @@ export async function startApp() {
     app.use(express.json());
 
     app.get("/health", (req: Request, res: Response) => {
+        console.log("Health check received!");
         res.status(200).json({
             status: "healthy",
             timestamp: new Date().toISOString(),

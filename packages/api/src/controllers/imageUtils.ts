@@ -35,22 +35,21 @@ export async function generateSinglePromptVariation(
     }
 }
 
-async function testImage() {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    const testUrl =
-        "https://alamocitygolftrail.com/wp-content/uploads/2022/11/canstockphoto22402523-arcos-creator.com_-1024x1024-1.jpg";
-    return {
-        images: [{ url: testUrl }],
-    };
-}
+// async function testImage() {
+//     await new Promise((resolve) => setTimeout(resolve, 1000));
+//     const testUrl =
+//         "https://alamocitygolftrail.com/wp-content/uploads/2022/11/canstockphoto22402523-arcos-creator.com_-1024x1024-1.jpg";
+//     return {
+//         images: [{ url: testUrl }],
+//     };
+// }
 
 export async function generateSingleImage(
     context: IContext,
     prompt: string
 ): Promise<ImageResult | ErrorResult> {
     try {
-        const imageData = await context.services.fal.createImage(prompt); // TODO turn this on when done testing
-        // const imageData = await testImage();
+        const imageData = await context.services.fal.createImage(prompt);
         return {
             success: true,
             prompt,

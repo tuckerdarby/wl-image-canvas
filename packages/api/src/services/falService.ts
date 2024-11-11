@@ -18,6 +18,10 @@ export class FalService {
         const result = await fal.subscribe("fal-ai/fast-turbo-diffusion", {
             input: {
                 prompt,
+                image_size: {
+                    width: 512,
+                    height: 512,
+                },
             },
         });
 
