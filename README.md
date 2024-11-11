@@ -15,7 +15,7 @@ This is a monorepo containing frontend (client), backend (api), and infrastructu
 
 ### Client
 
-The client is a React Typescript frontend that uses shadcn for UI components.
+The client is a React Typescript frontend that uses shadcn for UI components. The client maintains an SSE connection with the API server to receive updates.
 
 ### API
 
